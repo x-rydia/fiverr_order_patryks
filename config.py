@@ -1,7 +1,8 @@
 PAIRS = (
     'BTCUSDT',
     'ETHUSDT'
+    'DOGEUSD'
 )
-KEY = ''
-SEC = ''
+KEY = 'O5EUsVbTuFX1O1nZeiI8A49gq178st0gzgZTMG2NmtttsxSon2ptim4yKLfcyo0I'
+SEC = '5FFfOAJcgjBAyeOnxzbJUsjuPwZHNzigVIXko2eOUZsPCIw6XHspqNGkU8UXddUh'
 QUANTITY_UNIT = .05
