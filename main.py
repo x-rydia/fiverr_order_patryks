@@ -1,6 +1,12 @@
 '''
 File for the bulk of script execution. Please fill out config fully 
 before running, or else it will simply execute the unit tests. 
+
+Text me, +1 856-631-5880
+
+I have to make my fiverr messages appear pristine to their monitors
+This is not my first account, the last one was banned because I 
+scheduled calls with all my customers
 '''
 from binance import Client
 from matplotlib.pyplot import fill, hist
@@ -56,7 +62,7 @@ def main(loop_frequency: float, test: bool=False) -> None:
         for p in PAIRS:
             cur_price = CLI.get_avg_price(p)
             if cur_price >= d['HBB'][-1]:
-                CLI.options_place_order(
+                CLI.futures_create_order(
                     symbol=p,
                     side=CLI.SIDE_SELL,
                     type=CLI.FUTURE_ORDER_TYPE_MARKET,
@@ -65,14 +71,13 @@ def main(loop_frequency: float, test: bool=False) -> None:
                 print(f'SOLD {QUANTITY_UNIT} of: {p}')
 
             elif cur_price <= d['LBB'][-1]:
-                CLI.options_place_order(
+                CLI.futures_create_order(
                     symbol=p,
                     side=CLI.SIDE_BUY,
                     type=CLI.FUTURE_ORDER_TYPE_MARKET,
                     quantity=QUANTITY_UNIT
                 )
-                print(f'BUY {QUANTITY_UNIT} of: {p}')
-
+                print(f'BUY {QUANTITY_UNIT} of: {p}')ß
             else:
                 pass
         
@@ -84,3 +89,4 @@ if __name__ == '__main__':
     # main(60, test=True)
     # main(60, test=False)
     main(1)
+    
