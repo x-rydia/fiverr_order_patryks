@@ -1,23 +1,23 @@
-'''
-File for the bulk of script execution. Please fill out config fully 
-before running, or else it will simply execute the unit tests. 
 
-Text me, +1 856-631-5880
-
-I have to make my fiverr messages appear pristine to their monitors
-This is not my first account, the last one was banned because I 
-scheduled calls with all my customers
-'''
 from binance import Client
-from matplotlib.pyplot import fill, hist
 from config import *
 from pandas import DataFrame
 from time import sleep, time
 from datetime import datetime
-from ta.volatility import bollinger_hband, bollinger_lband
+from ta.volatility import (
+    bollinger_hband, 
+    bollinger_lband
+)
+from ta.momentum import (
+    rsi
+)
+from ta.volume import (
+    chaikin_money_flow
+)
+from ta.trend import (
+    _sma
+)
 
-def set_ticks():
-    CLI = Client(KEY, SEC)
 
 def main(loop_frequency: float, test: bool=False) -> None:
     '''
@@ -53,40 +53,81 @@ def main(loop_frequency: float, test: bool=False) -> None:
             ''')
             candle_id += 1
         candle_id = 0
-
+    #APPLY INDICATORS TO THE DATAFRAME
     for d in df_hist:
+        #If you would like a detailed explanaiton of what is going on here and why
+        #I use the indicators that I use together, please contact me.
         d['HBB'] = bollinger_hband(d[4], fillna=True)
         d['LBB'] = bollinger_lband(d[4], fillna=True)
+        d['RSI'] = rsi(d[4], fillna=True)
+        d['CMF'] = chaikin_money_flow(d[2], d[3], d[4], d[5], fillna=True)
+        d['SMA'] = _sma(d[4], 10, fillna=True)
     
     while True:
+        cycle_no = 0
         for p in PAIRS:
             cur_price = CLI.get_avg_price(p)
+            b_score = 0
+            s_score = 0
+            
             if cur_price >= d['HBB'][-1]:
-                CLI.futures_create_order(
-                    symbol=p,
-                    side=CLI.SIDE_SELL,
-                    type=CLI.FUTURE_ORDER_TYPE_MARKET,
-                    quantity=QUANTITY_UNIT
-                )
-                print(f'SOLD {QUANTITY_UNIT} of: {p}')
-
-            elif cur_price <= d['LBB'][-1]:
-                CLI.futures_create_order(
-                    symbol=p,
-                    side=CLI.SIDE_BUY,
-                    type=CLI.FUTURE_ORDER_TYPE_MARKET,
-                    quantity=QUANTITY_UNIT
-                )
-                print(f'BUY {QUANTITY_UNIT} of: {p}')ß
-            else:
-                pass
-        
+                s_score += 1
+            
+            if d['RSI'][-1] <= 70:
+                s_score += 1
+            
+            if d['SMA'][-1] >= cur_price * 1.05:
+                s_score += 1
+            
+            if d['CMF'][-1] >= 0:
+                s_score += 1
+            
+            if cur_price >= d['LBB'][-1]:
+                b_score += 1
+            
+            if d['RSI'][-1] <= 30:
+                b_score += 1
+            
+            if d['CMF'][-1] <= 0:
+                b_score += 1
+            
+            if d['SMA'] >= cur_price * 1.05:
+                b_score += 1
+            
+            if b_score >= 3 and s_score == 0:
+                try:
+                    CLI.order_market_buy(
+                        p,
+                        QUANTITY_UNIT
+                    )
+                    print(f'ATTEMPTED BUY {p}')
+                except:
+                    print(f'FAILED TO BUY {p}')
+            
+            if s_score >= 3 and b_score == 0:
+                try:
+                    CLI.order_market_sell(
+                        p,
+                        QUANTITY_UNIT
+                    )
+                    print(f'ATTEMPTED SELL {p}')
+                except:
+                    print(f'FAILED TO SELL {p}')
+            print(f'''
+                        CYCLE SUMMARY
+                ___________________________
+                CYCLE SUMMARY NO: {cycle_no}
+                FOR TICKER: {p}
+                BUY SCORE: {b_score}
+                SELL SCORE: {s_score}
+                
+                *** IF LIMITED ACTIVITY DUE TO LOW 
+                VOLATILITY, CHANGE THE loop_frequency 
+                TO A LOWER VALUE ***
+                ____________________________
+            ''')
         sleep(loop_frequency)
 
 
-
 if __name__ == '__main__':
-    # main(60, test=True)
-    # main(60, test=False)
-    main(1)
-    
+    main(.5)
